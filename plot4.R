@@ -8,6 +8,9 @@ subdata$Time <- strptime(subdata$Time, format="%H:%M:%S")
 subdata[1:1440,"Time"] <- format(subdata[1:1440,"Time"],"2007-02-01 %H:%M:%S")
 subdata[1441:2880,"Time"] <- format(subdata[1441:2880,"Time"],"2007-02-02 %H:%M:%S")
 
+#plotting in png
+png("plot4.png", width=480, height=480)
+
 # initiating a composite plot with many graphs
 par(mfrow=c(2,2))
 
@@ -23,6 +26,5 @@ with(subdata,{
   plot(subdata$Time,as.numeric(as.character(subdata$Global_reactive_power)),type="l",xlab="datetime",ylab="Global_reactive_power")
 })
 
-#plotting in png
-png("plot4.png", width=480, height=480)
+
 dev.off()
