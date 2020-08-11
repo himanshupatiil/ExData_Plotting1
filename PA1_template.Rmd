@@ -1,0 +1,112 @@
+---
+title: "Reproducible Reasearch- Course Project I"
+author: "Himanshu Patil"
+date: "8/11/2020"
+output: html_document
+---
+Setting global option to turn warnings off
+
+```{r}
+knitr::opts_chunk$set(warning=FALSE)
+```
+
+
+*Q.1 Code for reading in the dataset and/or processing the data*
+
+```{r}
+activity.data <- read.csv("activity.csv")
+activity.data$date <- as.POSIXct(activity.data$date, "%Y-%m-%d")
+weekday <- weekdays(activity.data$date)
+activity.data <- cbind(activity.data,weekday)
+
+summary(activity.data)
+```
+
+*Q.2 Histogram of the total number of steps taken each day*
+
+```{r}
+activity.total.steps <- with(activity.data, aggregate(steps, by = list(date), FUN = sum, na.rm = TRUE))
+names(activity.total.steps) <- c("date", "steps")
+hist(activity.total.steps$steps, main = "Total number of steps taken per day", xlab = "Total steps taken per day", col = "red", ylim = c(0,20), breaks = seq(0,25000, by=2500))
+```
+
+*Q.3 Mean and median number of steps taken each day*
+
+1.Mean of the steps taken each day
+```{r}
+mean(activity.total.steps$steps)
+```
+
+2.Median of the steps taken each day
+```{r}
+median(activity.total.steps$steps)
+```
+
+*Q.4 Time series plot of the average number of steps taken*
+
+```{r}
+average.daily.activity <- aggregate(activity.data$steps, by=list(activity.data$interval), FUN=mean, na.rm=TRUE)
+names(average.daily.activity) <- c("interval", "mean")
+plot(average.daily.activity$interval, average.daily.activity$mean, type = "l", col="red", lwd = 2, xlab="Interval", ylab="Average number of steps", main="Average number of steps per intervals")
+```
+
+*Q.5The 5-minute interval that, on average, contains the maximum number of steps*
+
+```{r}
+average.daily.activity[which.max(average.daily.activity$mean), ]$interval
+```
+
+*Q.6 Code to describe and show a strategy for imputing missing data*
+
+1.Calculating  the total number of missing values in the dataset
+
+```{r}
+sum(is.na(activity.data$steps))
+```
+
+2.filling in all of the missing values in the dataset
+
+ ```{r}
+imputed.steps <- average.daily.activity$mean[match(activity.data$interval, average.daily.activity$interval)]
+```
+
+3.Creating  a new dataset that is equal to the original dataset but with the missing data filled in.
+
+```{r}
+activity.imputed <- transform(activity.data, steps = ifelse(is.na(activity.data$steps), yes = imputed.steps, no = activity.data$steps))
+total.steps.imputed <- aggregate(steps ~ date, activity.imputed, sum)
+names(total.steps.imputed) <- c("date", "daily_steps")
+```
+
+*Q.7 Histogram of the total number of steps taken each day after missing values are imputed*
+
+```{r}
+hist(total.steps.imputed$daily_steps, col = "red", xlab = "Total steps per day", ylim = c(0,30), main = "Total number of steps taken each day", breaks = seq(0,25000,by=2500))
+```
+
+*Q.8 Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends*
+
+1.Creating a new factor variable in the dataset with two levels – “weekday” and “weekend”
+
+```{r}
+activity.data$date <- as.Date(strptime(activity.data$date, format="%Y-%m-%d"))
+activity.data$day <- weekdays(activity.data$date)
+for (i in 1:nrow(activity.data)){
+  if (activity.data[i,]$day %in% c("Saturday", "Sunday")){
+    activity.data[i,]$day <- "weekend"
+  }
+  else {
+    activity.data[i,]$day <- "weekday"
+  }
+}
+```
+
+Panel Plot
+
+```{r}
+steps.by.day <- aggregate(activity.data$steps ~ activity.data$interval + activity.data$day, activity.data, mean, na.rm = TRUE)
+names(steps.by.day) <- c("interval", "day", "steps")
+library(lattice)
+xyplot(steps ~ interval | day, steps.by.day, type = "l", layout = c(1, 2), xlab = "Interval", ylab = "Number of steps")
+```
+ 
